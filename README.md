@@ -63,7 +63,7 @@ Complementary to the above action, you can check if two time windows are
 contiguous (i.e., adjacent, sharing one boundary).
 ```python
 >>> tw = TimeWindow(datetime(2019, 1, 23), datetime(2019, 1, 29))
->>> tw2 = TimeWindow(datetime(2019, 1, 20), datetime(2019, 1, 23)
+>>> tw2 = TimeWindow(datetime(2019, 1, 20), datetime(2019, 1, 23))
 >>> tw.contiguous(tw2)
 [TimeWindow(datetime.datetime(2019, 1, 20, 0, 0), datetime.datetime(2019, 1, 23, 0, 0)),
  TimeWindow(datetime.datetime(2019, 1, 23, 0, 0), datetime.datetime(2019, 1, 29, 0, 0))]
@@ -85,7 +85,7 @@ TimeWindow(datetime.datetime(2019, 1, 27, 0, 0), datetime.datetime(2019, 1, 29, 
 TimeWindow(datetime.datetime(2019, 1, 23, 0, 0), datetime.datetime(2019, 1, 30, 0, 0))
 
 >>> tw.complement(tw2)
-imeWindow(datetime.datetime(2019, 1, 23, 0, 0), datetime.datetime(2019, 1, 27, 0, 0))
+TimeWindow(datetime.datetime(2019, 1, 23, 0, 0), datetime.datetime(2019, 1, 27, 0, 0))
 ```
 
 ## Contributing
