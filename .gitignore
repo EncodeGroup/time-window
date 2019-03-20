@@ -1,0 +1,13 @@
+# Python Bytecode
+*.pyc
+__pycache__/
+
+# Python Packaging & Distribution
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+
+# PyCharm
+.idea/
