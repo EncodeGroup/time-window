@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/EncodeGroup/time-window.svg?style=shield)](https://circleci.com/gh/EncodeGroup/time-window)
+
 # Time Window
 
 Time Window is a small Python library that implements a representation for a
