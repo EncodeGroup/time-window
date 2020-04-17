@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta
 import unittest
 
-from time_window.helpers import gaps_iterator
-from time_window import TimeWindow, TimeWindowsCollection
+from time_window.helpers import gaps_iterator, utcfromtimestamp_tzaware
+from time_window import (
+    TimeWindow, TimeWindowsCollection, time_window_from_timestamps,
+    time_window_to_timestamps
+)
 
 
 class TestTimeWindow(unittest.TestCase):
@@ -495,6 +498,163 @@ class TestTimeWindow(unittest.TestCase):
              TimeWindow(datetime(2015, 2, 3, 0, 0),
                         datetime(2015, 2, 3, 5, 4, 3, 1))])
 
+    def test_split_per_week(self):
+
+        # Single time test
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 15, 30, 40, 54),
+            datetime(2015, 1, 1, 15, 30, 40, 54),
+        )
+        self.assertEqual(
+            tw.split_per_week(),
+            [tw])
+
+        # Single day test
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 15, 30, 40, 54),
+            datetime(2015, 1, 1, 16, 4, 3, 1),
+        )
+        self.assertEqual(
+            tw.split_per_week(),
+            [tw])
+
+        # Span one week, with period less than 7 days
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 23),
+            datetime(2015, 1, 3, 10)
+        )
+        self.assertEqual(
+            tw.split_per_week(),
+            [
+                TimeWindow(datetime(2015, 1, 1, 23), datetime(2015, 1, 3, 10))
+            ]
+        )
+
+        # Span two weeks, with period greater than 7 days
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 23),
+            datetime(2015, 1, 11, 23, 30)
+        )
+        print(tw.split_per_week())
+        self.assertEqual(
+            tw.split_per_week(),
+            [TimeWindow(datetime(2015, 1, 1, 23),
+                        datetime(2015, 1, 5, 0)),
+             TimeWindow(datetime(2015, 1, 5, 0),
+                        datetime(2015, 1, 11, 23, 30))
+             ]
+        )
+
+    def test_split_per_month(self):
+        # Single time test
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 15, 30, 40, 54),
+            datetime(2015, 1, 1, 15, 30, 40, 54),
+        )
+        self.assertEqual(
+            tw.split_per_month(),
+            [tw])
+
+        # Single day test
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 15, 30, 40, 54),
+            datetime(2015, 1, 1, 16, 4, 3, 1),
+        )
+        self.assertEqual(
+            tw.split_per_month(),
+            [tw])
+
+        # Span one month, with period less than 30 days
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 23),
+            datetime(2015, 1, 15, 10)
+        )
+        self.assertEqual(
+            tw.split_per_month(),
+            [
+                TimeWindow(datetime(2015, 1, 1, 23), datetime(2015, 1, 15, 10))
+            ]
+        )
+
+        # Span two months, with period greater than 30 days
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 23),
+            datetime(2015, 2, 5, 23, 30)
+        )
+        self.assertEqual(
+            tw.split_per_month(),
+            [TimeWindow(datetime(2015, 1, 1, 23),
+                        datetime(2015, 2, 1, 0, 0)),
+             TimeWindow(datetime(2015, 2, 1, 0, 0),
+                        datetime(2015, 2, 5, 23, 30))
+             ]
+        )
+
+        # Span three months, with period greater than 30 days
+        tw = TimeWindow(
+            datetime(2015, 1, 1, 23),
+            datetime(2015, 3, 5, 23, 30)
+        )
+        self.assertEqual(
+            tw.split_per_month(),
+            [TimeWindow(datetime(2015, 1, 1, 23),
+                        datetime(2015, 2, 1, 0, 0)),
+             TimeWindow(datetime(2015, 2, 1, 0, 0),
+                        datetime(2015, 3, 1, 0, 0)),
+             TimeWindow(datetime(2015, 3, 1, 0, 0),
+                        datetime(2015, 3, 5, 23, 30))
+             ]
+        )
+
+        # Span three months, with period greater than 30 days,
+        # starting from the middle of the first month
+        tw = TimeWindow(
+            datetime(2015, 1, 15, 5),
+            datetime(2015, 3, 6, 15)
+        )
+        self.assertEqual(
+            tw.split_per_month(),
+            [TimeWindow(datetime(2015, 1, 15, 5, 0),
+                        datetime(2015, 2, 1, 0, 0)),
+             TimeWindow(datetime(2015, 2, 1, 0, 0),
+                        datetime(2015, 3, 1, 0, 0)),
+             TimeWindow(datetime(2015, 3, 1, 0, 0),
+                        datetime(2015, 3, 6, 15, 0))
+             ]
+        )
+
+        # Span five months, with period greater than 30 days,
+        # starting from the 10th day of the first month
+        tw = TimeWindow(
+            datetime(2015, 5, 10, 5),
+            datetime(2015, 7, 23, 15)
+        )
+        self.assertEqual(
+            tw.split_per_month(),
+            [TimeWindow(datetime(2015, 5, 10, 5, 0),
+                        datetime(2015, 6, 1, 0, 0)),
+             TimeWindow(datetime(2015, 6, 1, 0, 0),
+                        datetime(2015, 7, 1, 0, 0)),
+             TimeWindow(datetime(2015, 7, 1, 0, 0),
+                        datetime(2015, 7, 23, 15, 0))
+             ]
+        )
+
+        # Span two months, with period less than 30 days,
+        # starting from December
+        tw = TimeWindow(
+            datetime(2015, 12, 15, 5),
+            datetime(2016, 1, 6, 15)
+        )
+        self.assertEqual(
+            tw.split_per_month(),
+            [TimeWindow(datetime(2015, 12, 15, 5, 0),
+                        datetime(2016, 1, 1, 0, 0)),
+             TimeWindow(datetime(2016, 1, 1, 0, 0),
+                        datetime(2016, 1, 6, 15, 0))
+             ]
+        )
+
 
 class TestTimeWindowsCollection(unittest.TestCase):
 
@@ -742,3 +902,26 @@ class TestTimeWindowsCollection(unittest.TestCase):
 
         # check that it does not raise any exception with unicode
         str(repr(tws))
+
+
+class TestFunctions(unittest.TestCase):
+
+    def test_time_window_from_timestamps(self):
+        start = 1420063200
+        end = start + 120
+        check_tw = time_window_from_timestamps((start, end))
+        tw = TimeWindow(
+            utcfromtimestamp_tzaware(start),
+            utcfromtimestamp_tzaware(end)
+        )
+        self.assertEqual(check_tw, tw)
+
+    def test_time_window_to_timestamps(self):
+        start = 1420063200
+        end = start + 120
+        tw = TimeWindow(
+            utcfromtimestamp_tzaware(start),
+            utcfromtimestamp_tzaware(end)
+        )
+        tw_timestamps = time_window_to_timestamps(tw)
+        self.assertTupleEqual(tw_timestamps, (start, end))

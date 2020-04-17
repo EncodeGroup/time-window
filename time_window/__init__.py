@@ -1,2 +1,4 @@
 from time_window.time_window import TimeWindow
 from time_window.time_window import TimeWindowsCollection
+from time_window.time_window import time_window_from_timestamps
+from time_window.time_window import time_window_to_timestamps

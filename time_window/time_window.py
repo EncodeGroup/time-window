@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta
 
 from babel.dates import format_timedelta
+from dateutil.relativedelta import relativedelta
 
-from time_window.helpers import make_sequence
+from time_window.helpers import (
+    make_sequence, utcfromtimestamp_tzaware, utctimestamp_tzaware
+)
 
 
 def _sort_time_windows_since(tw1, tw2):
@@ -17,6 +20,20 @@ def _sort_time_windows_since(tw1, tw2):
         return [tw1, tw2]
     else:
         return [tw2, tw1]
+
+
+def _get_first_day_of_next_month(dt):
+    """
+    Get the first day of next month for the given datetime object
+    :param datetime dt: The datetime object to calculate the first day
+        of next month
+    :return: The first day of the next month
+    :rtype: datetime
+    """
+    next_month = dt + relativedelta(months=1)
+    next_month = next_month.replace(day=1)
+
+    return datetime.combine(next_month, datetime.min.time())
 
 
 class TimeWindow(object):
@@ -254,6 +271,44 @@ class TimeWindow(object):
             day_periods.append(TimeWindow(start_time, end_time))
             start_time = end_time
 
+    def split_per_week(self):
+        """"
+        Split time window to a list of time windows that are contiguous have
+        100% overlapping with this one and the section has been performed
+        on each change of week.
+        """
+        week_periods = []
+        week_delta = timedelta(days=7)
+        start_time = self.since
+        while True:
+            beginning_of_week = start_time - timedelta(
+                days=start_time.weekday()
+            )
+            end_of_week = beginning_of_week.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            ) + week_delta
+            if end_of_week > self.until:
+                week_periods.append(TimeWindow(start_time, self.until))
+                return week_periods
+            week_periods.append(TimeWindow(start_time, end_of_week))
+            start_time = end_of_week
+
+    def split_per_month(self):
+        """"
+        Split time window to a list of time windows that are contiguous have
+        100% overlapping with this one and the section has been performed
+        on each change of month.
+        """
+        month_periods = []
+        start_time = self.since
+        while True:
+            end_time = _get_first_day_of_next_month(start_time)
+            if end_time > self.until:
+                month_periods.append(TimeWindow(start_time, self.until))
+                return month_periods
+            month_periods.append(TimeWindow(start_time, end_time))
+            start_time = end_time
+
     def __eq__(self, other):
         return self.since == other.since and self.until == other.until
 
@@ -353,3 +408,29 @@ class TimeWindowsCollection(object):
 
     def __repr__(self):
         return repr(self.time_windows)
+
+
+def time_window_from_timestamps(period_as_timestamps):
+    """
+    Create a TimeWindow from a tuple of epoch timestamps.
+    :param (int, int) period_as_timestamps: Tuple containing the start epoch
+    timestamp as the first element and the end epoch timestamp as the second.
+    :rtype: TimeWindow
+    """
+    since, until = period_as_timestamps
+    return TimeWindow(
+        utcfromtimestamp_tzaware(since),
+        utcfromtimestamp_tzaware(until)
+    )
+
+
+def time_window_to_timestamps(time_window):
+    """
+    Convert a TimeWindow instance to a tuple of epoch timestamps.
+    :param TimeWindow time_window: the time window to be converted.
+    :rtype: (int, int)
+    """
+    return (
+        utctimestamp_tzaware(time_window.since),
+        utctimestamp_tzaware(time_window.until)
+    )

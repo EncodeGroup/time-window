@@ -25,6 +25,7 @@ setup(
         'time_window'
     ],
     install_requires=[
-        'babel>=2.1.1, <3.0'
+        'babel>=2.1.1, <3.0',
+        'python-dateutil>=2.5.2, <3.0'
     ]
 )
