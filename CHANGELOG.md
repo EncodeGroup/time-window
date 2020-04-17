@@ -1,7 +1,9 @@
 # Changelog
 
 
-## [Unreleased]
+## [0.1.0] - 2020-04-17
+
+New functionality.
 
 ### Added
 - Add the `ExpirableObject` class to the `helpers` module.
@@ -11,7 +13,7 @@
 - Add the methods `split_per_week` and `split_per_month` to the `TimeWindow` class.
 
 
-## [0.0.1] - 2017-06-20
+## [0.0.1] - 2019-01-29
 
 The initial version of the library.
 
